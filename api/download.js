@@ -1,7 +1,5 @@
 const WINDOW_SECONDS = 5 * 60;
 const MAX_REQUESTS_PER_WINDOW = 1;
-const MAX_RESPONSE_BYTES = 10 * 1024 * 1024;
-
 const memory = globalThis.__snakeDownloadRateLimit || new Map();
 globalThis.__snakeDownloadRateLimit = memory;
 
@@ -122,20 +120,11 @@ export default async function handler(req, res) {
     });
   }
 
-  const length = Number(response.headers.get("content-length") || 0);
-  if (length > MAX_RESPONSE_BYTES) {
-    return res.status(502).json({ error: "Source file exceeds safety limit" });
-  }
-
   let data;
   try {
     data = await response.arrayBuffer();
   } catch {
     return res.status(502).json({ error: "Could not read DATA.CSV" });
-  }
-
-  if (data.byteLength === 0 || data.byteLength > MAX_RESPONSE_BYTES) {
-    return res.status(502).json({ error: "Invalid DATA.CSV size" });
   }
 
   res.statusCode = 200;
