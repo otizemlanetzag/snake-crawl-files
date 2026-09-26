@@ -1,0 +1,42 @@
+name: Sync DATA.CSV
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download DATA.CSV from snake-crawl
+        run: |
+          curl -fL --retry 3 --retry-delay 5 \
+            "https://raw.githubusercontent.com/otizemlanetzag/snake-crawl/main/DATA.CSV" \
+            -o DATA.CSV
+
+      - name: Check that the download is valid
+        run: |
+          test -s DATA.CSV
+
+      - name: Update DATA.CSV in this repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git ls-files --error-unmatch DATA.CSV >/dev/null 2>&1; then
+            git add DATA.CSV
+            if git diff --cached --quiet; then
+              echo "DATA.CSV is already up to date."
+            else
+              git commit -m "Sync DATA.CSV from snake-crawl"
+              git push
+            fi
+          else
+            git add DATA.CSV
+            git commit -m "Add synced DATA.CSV from snake-crawl"
+            git push
+          fi
